@@ -1,0 +1,197 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <script src="https://unpkg.com/vue@next"></script>
+    <!-- import CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <!-- import JavaScript -->
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.18.10/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
+    <title>simple-tools</title>
+  </head>
+  <body>
+    <div id="app">
+      <input type="file" @change="importf" />
+      <el-image src="./o_1es4kvqtmsjp388po410ne1otlc.jpg"></el-image>
+      <el-image src="https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg"></el-image>
+      <div class="container" v-show="hasFiles">
+        <el-select v-model="portfolio" placeholder="请选择产品" @change="handleChange">
+          <el-option
+            v-for="(value, key) in totalData"
+            :clearable="false"
+            :key="key"
+            :label="key"
+            :value="key"
+          />
+        </el-select>
+        <el-tabs v-model="activeName" class="demo-tabs" @tab-change="handleChange">
+          <el-tab-pane v-for="(value, index) in keylist" :key="value" :label="value" :name="value"></el-tab-pane>
+        </el-tabs>
+        <div id="main"></div>
+      </div>
+    </div>
+    <script>
+      const App = {
+        data() {
+          return {
+            totalData: {},
+            activeName: 'Targeting',
+            portfolio: '',
+            hasFiles: false,
+            keylist: [
+              'Targeting',
+              'Match Type',
+              'Impressions',
+              'Click-Thru Rate (CTR)',
+              'Cost Per Click (CPC)',
+              '7 Day Total Sales',
+              'Total Return on Advertising Spend (ROAS)',
+              '7 Day Total Orders (#)'
+            ],
+          };
+        },
+        methods: {
+          /*
+            FileReader共有4种读取方法：
+            1.readAsArrayBuffer(file)：将文件读取为ArrayBuffer。
+            2.readAsBinaryString(file)：将文件读取为二进制字符串
+            3.readAsDataURL(file)：将文件读取为Data URL
+            4.readAsText(file, [encoding])：将文件读取为文本，encoding缺省值为'UTF-8'
+          */
+          importf(obj) {
+            var wb; //读取完成的数据
+            var rABS = false; //是否将文件读取为二进制字符串
+            obj.files = obj.target.files;
+            if (!obj.files) {
+              return;
+            }
+            var f = obj.files[0];
+            var reader = new FileReader();
+            const that = this;
+            reader.onload = function (e) {
+              var data = e.target.result;
+              if (rABS) {
+                wb = XLSX.read(btoa(that.fixdata(data)), {
+                  //手动转化
+                  type: "base64",
+                });
+              } else {
+                wb = XLSX.read(data, {
+                  type: "binary",
+                });
+              }
+              that.totalData = {};
+              const sheet = XLSX.utils.sheet_to_json(wb.Sheets['Sponsored Product Search Term R']);
+              sheet.forEach((item) => {
+                const temp = that.totalData[item['Portfolio name']];
+                if (temp === undefined) {
+                  that.totalData[item['Portfolio name']] = [item];
+                } else {
+                  temp.push(item);
+                }
+              });
+              const keys = Object.keys(that.totalData);
+              that.activeName = that.keylist[0];
+              console.log(that.activeName);
+              console.log(that.keylist);
+              if (keys.length) that.portfolio = keys[0];
+              that.hasFiles = true;
+              console.log(that.totalData);
+            };
+            if (rABS) {
+              reader.readAsArrayBuffer(f);
+            } else {
+              reader.readAsBinaryString(f);
+            }
+          },
+          fixdata(data) {
+            //文件流转BinaryString
+            var o = "",
+              l = 0,
+              w = 10240;
+            for (; l < data.byteLength / w; ++l)
+              o += String.fromCharCode.apply(
+                null,
+                new Uint8Array(data.slice(l * w, l * w + w))
+              );
+            o += String.fromCharCode.apply(null, new Uint8Array(data.slice(l * w)));
+            return o;
+          },
+          handleChange(tab) {
+            console.log(this.activeName);
+            console.log(this.portfolio);
+            var chartDom = document.getElementById('main');
+            var myChart = echarts.init(chartDom);
+            var option;
+            const totalData = {};
+            const data = [];
+
+            this.totalData[this.portfolio].forEach((item) => {
+              if (totalData[item[this.activeName]] === undefined) {
+                totalData[item[this.activeName]] = 1;
+              } else {
+                totalData[item[this.activeName]]++;
+              }
+            });
+            for (const key in totalData) {
+              if (totalData.hasOwnProperty.call(totalData, key)) {
+                data.push({ value: totalData[key], name: key });
+              }
+            }
+
+            option = {
+              title: {
+                text: this.portfolio,
+                subtext: this.activeName,
+                left: 'center'
+              },
+              tooltip: {
+                trigger: 'item'
+              },
+              legend: {
+                orient: 'vertical',
+                left: 'left'
+              },
+              series: [
+                {
+                  name: 'Access From',
+                  type: 'pie',
+                  radius: '50%',
+                  data: data,
+                  emphasis: {
+                    itemStyle: {
+                      shadowBlur: 10,
+                      shadowOffsetX: 0,
+                      shadowColor: 'rgba(0, 0, 0, 0.5)'
+                    }
+                  }
+                }
+              ]
+            };
+            myChart.setOption(option, true);
+          },
+        },
+      };
+      const app = Vue.createApp(App);
+      app.use(ElementPlus);
+      app.mount("#app");
+    </script>
+    <style>
+      .container {
+        position: relative;
+        margin-top: 10px;
+      }
+      .el-tabs__nav-prev,
+      .el-tabs__nav-next {
+        top: 15px;
+      }
+      #main {
+        height: 600px;
+        width: 800px;
+        margin: 20px auto 0 auto;
+      }
+    </style>
+  </body>
+</html>

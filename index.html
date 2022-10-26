@@ -1,197 +1,49 @@
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <script src="https://unpkg.com/vue@next"></script>
-    <!-- import CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
-    <!-- import JavaScript -->
-    <script src="https://unpkg.com/element-plus"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.18.10/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>
-    <title>simple-tools</title>
-  </head>
-  <body>
-    <div id="app">
-      <input type="file" @change="importf" />
-      <el-image src="./o_1es4kvqtmsjp388po410ne1otlc.jpg"></el-image>
-      <el-image src="https://fuss10.elemecdn.com/e/5d/4a731a90594a4af544c0c25941171jpeg.jpeg"></el-image>
-      <div class="container" v-show="hasFiles">
-        <el-select v-model="portfolio" placeholder="请选择产品" @change="handleChange">
-          <el-option
-            v-for="(value, key) in totalData"
-            :clearable="false"
-            :key="key"
-            :label="key"
-            :value="key"
-          />
-        </el-select>
-        <el-tabs v-model="activeName" class="demo-tabs" @tab-change="handleChange">
-          <el-tab-pane v-for="(value, index) in keylist" :key="value" :label="value" :name="value"></el-tab-pane>
-        </el-tabs>
-        <div id="main"></div>
-      </div>
-    </div>
-    <script>
-      const App = {
-        data() {
-          return {
-            totalData: {},
-            activeName: 'Targeting',
-            portfolio: '',
-            hasFiles: false,
-            keylist: [
-              'Targeting',
-              'Match Type',
-              'Impressions',
-              'Click-Thru Rate (CTR)',
-              'Cost Per Click (CPC)',
-              '7 Day Total Sales',
-              'Total Return on Advertising Spend (ROAS)',
-              '7 Day Total Orders (#)'
-            ],
-          };
-        },
-        methods: {
-          /*
-            FileReader共有4种读取方法：
-            1.readAsArrayBuffer(file)：将文件读取为ArrayBuffer。
-            2.readAsBinaryString(file)：将文件读取为二进制字符串
-            3.readAsDataURL(file)：将文件读取为Data URL
-            4.readAsText(file, [encoding])：将文件读取为文本，encoding缺省值为'UTF-8'
-          */
-          importf(obj) {
-            var wb; //读取完成的数据
-            var rABS = false; //是否将文件读取为二进制字符串
-            obj.files = obj.target.files;
-            if (!obj.files) {
-              return;
-            }
-            var f = obj.files[0];
-            var reader = new FileReader();
-            const that = this;
-            reader.onload = function (e) {
-              var data = e.target.result;
-              if (rABS) {
-                wb = XLSX.read(btoa(that.fixdata(data)), {
-                  //手动转化
-                  type: "base64",
-                });
-              } else {
-                wb = XLSX.read(data, {
-                  type: "binary",
-                });
-              }
-              that.totalData = {};
-              const sheet = XLSX.utils.sheet_to_json(wb.Sheets['Sponsored Product Search Term R']);
-              sheet.forEach((item) => {
-                const temp = that.totalData[item['Portfolio name']];
-                if (temp === undefined) {
-                  that.totalData[item['Portfolio name']] = [item];
-                } else {
-                  temp.push(item);
-                }
-              });
-              const keys = Object.keys(that.totalData);
-              that.activeName = that.keylist[0];
-              console.log(that.activeName);
-              console.log(that.keylist);
-              if (keys.length) that.portfolio = keys[0];
-              that.hasFiles = true;
-              console.log(that.totalData);
-            };
-            if (rABS) {
-              reader.readAsArrayBuffer(f);
-            } else {
-              reader.readAsBinaryString(f);
-            }
-          },
-          fixdata(data) {
-            //文件流转BinaryString
-            var o = "",
-              l = 0,
-              w = 10240;
-            for (; l < data.byteLength / w; ++l)
-              o += String.fromCharCode.apply(
-                null,
-                new Uint8Array(data.slice(l * w, l * w + w))
-              );
-            o += String.fromCharCode.apply(null, new Uint8Array(data.slice(l * w)));
-            return o;
-          },
-          handleChange(tab) {
-            console.log(this.activeName);
-            console.log(this.portfolio);
-            var chartDom = document.getElementById('main');
-            var myChart = echarts.init(chartDom);
-            var option;
-            const totalData = {};
-            const data = [];
+<!doctype html>
+<html lang="en">
 
-            this.totalData[this.portfolio].forEach((item) => {
-              if (totalData[item[this.activeName]] === undefined) {
-                totalData[item[this.activeName]] = 1;
-              } else {
-                totalData[item[this.activeName]]++;
-              }
-            });
-            for (const key in totalData) {
-              if (totalData.hasOwnProperty.call(totalData, key)) {
-                data.push({ value: totalData[key], name: key });
-              }
-            }
-
-            option = {
-              title: {
-                text: this.portfolio,
-                subtext: this.activeName,
-                left: 'center'
-              },
-              tooltip: {
-                trigger: 'item'
-              },
-              legend: {
-                orient: 'vertical',
-                left: 'left'
-              },
-              series: [
-                {
-                  name: 'Access From',
-                  type: 'pie',
-                  radius: '50%',
-                  data: data,
-                  emphasis: {
-                    itemStyle: {
-                      shadowBlur: 10,
-                      shadowOffsetX: 0,
-                      shadowColor: 'rgba(0, 0, 0, 0.5)'
-                    }
-                  }
-                }
-              ]
-            };
-            myChart.setOption(option, true);
-          },
-        },
-      };
-      const app = Vue.createApp(App);
-      app.use(ElementPlus);
-      app.mount("#app");
-    </script>
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="./favicon.png" />
+    <link rel="dns-prefetch" href="https://reader.960960.xyz" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="keywords" content="epub reader free koodo" />
+    <meta itemprop="name" content="Koodo Reader - Free Epub Reader for Windows, Mac and Web" />
+    <meta itemprop="description"
+        content="Koodo Reader is an open-source epub reader with backup and restore support, runs on Windows, Mac and Web" />
     <style>
-      .container {
-        position: relative;
-        margin-top: 10px;
-      }
-      .el-tabs__nav-prev,
-      .el-tabs__nav-next {
-        top: 15px;
-      }
-      #main {
-        height: 600px;
-        width: 800px;
-        margin: 20px auto 0 auto;
-      }
+        #root {
+            height: 100%;
+            width: 100%
+        }
     </style>
-  </body>
+    <title>Koodo Reader</title>
+    <link href="./static/css/2.c4a851db.chunk.css" rel="stylesheet">
+    <link href="./static/css/main.e14b12d4.chunk.css" rel="stylesheet">
+</head>
+
+<body><noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div><canvas id="the-canvas"></canvas>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LW49EYTQWY" id="analytic"></script>
+    <script>if ("yes" !== JSON.parse(localStorage.getItem("readerConfig") || "{}").isDisableAnalytics) { function gtag() { dataLayer.push(arguments) } window.dataLayer = window.dataLayer || [], gtag("js", new Date), gtag("config", "G-LW49EYTQWY") }</script>
+    <script type="text/javascript" src="./lib/JSZip/jszip.min.js"></script>
+    <script type="text/javascript" src="./lib/kookit/kookit.umd.js"></script>
+    <script type="text/javascript" src="./lib/marked/marked.js"></script>
+    <script type="text/javascript" src="./lib/EpubJS/epub.min.js"></script>
+    <script type="text/javascript" src="./lib/pdf/build/pdf.js"></script>
+    <script type="text/javascript" src="./lib/Dropbox/Dropbox-sdk.min.js"></script>
+    <script type="text/javascript" src="./lib/Rangy/rangy-core.js"></script>
+    <script type="text/javascript" src="./lib/Rangy/rangy-serializer.js"></script>
+    <script type="text/javascript" src="./lib/Rangy/rangy-classapplier.js"></script>
+    <script type="text/javascript" src="./lib/Rangy/rangy-highlighter.js"></script>
+    <script type="text/javascript" src="./lib/Rangy/rangy-textrange.js"></script>
+    <script type="text/javascript" src="./lib/Hammer/hammer.min.js"></script>
+    <script type="text/javascript" src="./lib/unrar/unrar.js"></script>
+    <script type="text/javascript" src="./lib/djvu/djvu.js"></script>
+    <script type="text/javascript" src="./lib/djvu/djvu_viewer.js"></script>
+    <script type="text/javascript" src="./lib/mammoth/mammoth.browser.min.js"></script>
+    <script>!function (e) { function r(r) { for (var n, l, a = r[0], f = r[1], i = r[2], c = 0, s = []; c < a.length; c++)l = a[c], Object.prototype.hasOwnProperty.call(o, l) && o[l] && s.push(o[l][0]), o[l] = 0; for (n in f) Object.prototype.hasOwnProperty.call(f, n) && (e[n] = f[n]); for (p && p(r); s.length;)s.shift()(); return u.push.apply(u, i || []), t() } function t() { for (var e, r = 0; r < u.length; r++) { for (var t = u[r], n = !0, a = 1; a < t.length; a++) { var f = t[a]; 0 !== o[f] && (n = !1) } n && (u.splice(r--, 1), e = l(l.s = t[0])) } return e } var n = {}, o = { 1: 0 }, u = []; function l(r) { if (n[r]) return n[r].exports; var t = n[r] = { i: r, l: !1, exports: {} }; return e[r].call(t.exports, t, t.exports, l), t.l = !0, t.exports } l.m = e, l.c = n, l.d = function (e, r, t) { l.o(e, r) || Object.defineProperty(e, r, { enumerable: !0, get: t }) }, l.r = function (e) { "undefined" != typeof Symbol && Symbol.toStringTag && Object.defineProperty(e, Symbol.toStringTag, { value: "Module" }), Object.defineProperty(e, "__esModule", { value: !0 }) }, l.t = function (e, r) { if (1 & r && (e = l(e)), 8 & r) return e; if (4 & r && "object" == typeof e && e && e.__esModule) return e; var t = Object.create(null); if (l.r(t), Object.defineProperty(t, "default", { enumerable: !0, value: e }), 2 & r && "string" != typeof e) for (var n in e) l.d(t, n, function (r) { return e[r] }.bind(null, n)); return t }, l.n = function (e) { var r = e && e.__esModule ? function () { return e.default } : function () { return e }; return l.d(r, "a", r), r }, l.o = function (e, r) { return Object.prototype.hasOwnProperty.call(e, r) }, l.p = "./"; var a = this["webpackJsonpkoodo-reader"] = this["webpackJsonpkoodo-reader"] || [], f = a.push.bind(a); a.push = r, a = a.slice(); for (var i = 0; i < a.length; i++)r(a[i]); var p = f; t() }([])</script>
+    <script src="./static/js/2.4ab21a99.chunk.js"></script>
+    <script src="./static/js/main.c961e04f.chunk.js"></script>
+</body>
+
 </html>
