@@ -57,24 +57,29 @@
 	</h4>
 	<div class="divide"></div>
 	<div class="input-container">
-		<input type="text" class="main-input">
-		<button class="guess">猜一猜</button>
+		<input type="text" id="input" class="main-input">
+		<button class="guess" onclick="guess()">猜一猜</button>
 		<button>重开一局</button>
 		<button>任性看答案</button>
 	</div>
 	<div class="table-container">
 		<table>
 			<thead>
-				<th>次数</th>
-				<th>猜数字</th>
-				<th>结果</th>
+				<tr>
+					<th>次数</th>
+					<th>猜数字</th>
+					<th>结果</th>
+				</tr>
 			</thead>
 			<tbody></tbody>
 		</table>
 	</div>
+	<div class="result"></div>
 
 	<script>
 		let answer = '0123';
+		let result = '0A0B';
+		let count = 0;
 
 		function setAnswer() {
 			answer = ''
@@ -89,6 +94,28 @@
 
 		function getRandomDigit() {
 			return String(Math.floor(Math.random() * 10));
+		}
+
+		function guess() {
+			const value = document.querySelector('#input').value;
+			if (value.length !== 4) {
+				alert('请输入长度为4的数字');
+				return;
+			}
+			let A = 0, B = 0;
+			for (let i = 0; i <= 3; i++) {
+				if (answer[i] === value[i]) {
+					A++;
+				}
+				if (answer.includes(value[i])) {
+					B++;
+				}
+			}
+			result = `${A}A${B - A}B`;
+
+			const tr = document.createElement('tr');
+			tr.innerHTML = `<tr><th>${++count}</th><th>${value}</th><th>${result}</th></tr>`;
+			document.querySelector('tbody').append(tr);
 		}
 
 		(function () {
